@@ -28,7 +28,7 @@ pip install -r requirements.txt
 
 ### 3️⃣ Download the Dataset
 Download the dataset from Kaggle:
-1. Go to [Kaggle Music Dataset](https://www.kaggle.com/) (Replace with actual dataset link).
+1. Go to [Kaggle Music Dataset](https://www.kaggle.com/datasets/rodolfofigueroa/spotify-12m-songs/data) 
 2. Download the dataset and place it in the project folder.
 3. Ensure the dataset file name matches what is used in the code.
 
