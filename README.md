@@ -4,7 +4,8 @@
 This **Music Recommendation System** utilizes **Annoy (Approximate Nearest Neighbors Oh Yeah)** to perform fast and efficient nearest-neighbor searches. Given a dataset of songs with feature embeddings, the system recommends similar tracks based on user input.
 
 ## 🛠 Tech Stack
-- **Language:** Python
+- **Notebook Environment:** Jupyter Notebook
+- **Backend:** Python
 - **Key Python Libraries:**
   - `pandas` - For handling dataset operations
   - `sklearn.preprocessing.StandardScaler` - For scaling song features
@@ -49,61 +50,71 @@ Download the dataset from Kaggle:
 
 ---
 
-## 🏃 Usage
-### 1️⃣ Build the Annoy Index
-Run the following script to generate the Annoy index:
+## 🏃 Usage in Jupyter Notebook
+### 1️⃣ Open the Jupyter Notebook
+Run the following command in the terminal to start Jupyter Notebook:
 ```sh
-python build_index.py
+jupyter notebook
 ```
-This will:
-✔ Load the dataset from Kaggle
-✔ Scale the dataset
-✔ Create and save an Annoy index as `music.ann`
+Open the `.ipynb` file in the project directory.
 
 ### 2️⃣ Get Song Recommendations
 #### 🔹 Single Song Recommendation
 ```python
-from annoy import AnnoyIndex
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
+def recommend_song_annoy(song_title, df, X_scaled, annoy_index, top_n=5):
+    """Returns a list of recommended song names based on Annoy search."""
+    indices = df.index[df['name'] == song_title].tolist()
+    if not indices:
+        return []  # Return an empty list if the song is not found
+    idx = indices[0]
 
-# Load dataset
-songs = pd.read_csv("music_dataset.csv")  # Ensure filename matches Kaggle dataset
-scaler = StandardScaler()
-songs["scaled_embedding"] = scaler.fit_transform(songs["embedding"].tolist())
+    # Get the top_n + 1 nearest neighbors (including the song itself)
+    nearest_indices = annoy_index.get_nns_by_item(idx, top_n + 1)
 
-# Load Annoy index
-dim = len(songs["scaled_embedding"][0])
-annoy_index = AnnoyIndex(dim, 'angular')
-annoy_index.load("music.ann")
+    # Exclude the query song itself (usually the first one)
+    nearest_indices = [i for i in nearest_indices if i != idx][:top_n]
 
-# Get top N recommendations
-def get_recommendations(song_id, top_n=5):
-    return annoy_index.get_nns_by_item(song_id, top_n, include_distances=True)
-
-song_id = 1
-print(get_recommendations(song_id, 5))
+    return df.iloc[nearest_indices]['name'].tolist()  # Extract only song names
+query_song = 'Dancing With Your Ghost'
+recommended_songs = recommend_song_annoy(query_song, df, X_scaled, annoy_index, top_n=5)
+print("\nRecommended Songs:")
+print(recommended_songs)
 ```
 
 #### 🔹 Most Common Song Recommendation
 ```python
 from collections import defaultdict
+#Getting the list of most common songs in list 
+def common_songs_priority(*lists):
+    song_counts = defaultdict(int)
+    song_positions = {}
 
-def get_most_common_song(song_lists):
-    song_count = defaultdict(int)
-    for song_list in song_lists:
-        for song in song_list:
-            song_count[song] += 1
-    return max(song_count, key=song_count.get)
+    # Count occurrences and track first positions
+    for i, song_list in enumerate(lists):
+        song_set = set(song_list)  # Remove duplicates in a single list
+        for song in song_set:
+            song_counts[song] += 1
+            if song not in song_positions:
+                song_positions[song] = i  # First occurrence index
 
-# Example Usage
-song_recommendations = [
-    ["Song A", "Song B", "Song C"],
-    ["Song B", "Song C", "Song D"],
-    ["Song A", "Song B", "Song D"]
-]
+    # Find common songs in all lists
+    num_lists = len(lists)
+    common_songs = [song for song, count in song_counts.items() if count == num_lists]
 
-print(get_most_common_song(song_recommendations))
+    # Sort based on first appearance
+    common_songs.sort(key=lambda song: song_positions[song])
+
+    return common_songs
+#Recommendating Songs based Playlist
+li = ['Levitating', 'Psycho (feat. Ty Dolla $ign)', 'Blank Space', 'You Belong with Me', 'Look What You Made Me Do']
+
+# Get recommendations for each song in the playlist
+recommend = [recommend_song_annoy(song, df, X_scaled, annoy_index, top_n=10000) for song in li]
+
+# Find common songs across all recommended lists
+t = common_songs_priority(*recommend)
+
+print(t)
 ```
 
 ---
@@ -111,5 +122,7 @@ print(get_most_common_song(song_recommendations))
 ## 📈 Future Enhancements
 🔹 Improve recommendations using **deep learning models** 🧠
 🔹 Add **genre, mood, and tempo-based filtering** 🎶
+🔹 Deploy as a web service using **Flask or FastAPI** 🌍
+
 
 
